@@ -9,5 +9,6 @@ export const useEffectOnce = (effect: () => void | (() => void)): void => {
       effect();
       hasRun.current = true;
     }
+  // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 };

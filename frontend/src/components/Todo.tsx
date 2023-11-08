@@ -2,13 +2,12 @@ import React, { useState } from "react";
 import { ITodo, WsEvent } from "./types";
 import { TodoForm } from "./TodoForm";
 import { TodoList } from "./TodoList";
-import axios from "axios";
 import useWebSocket,{ ReadyState }  from 'react-use-websocket';
 import { useEffectOnce } from "../hooks/useEffectOnce";
+import { fetchTodos } from "../api/todo";
 
 export const Todo: React.FC = () => {
   const [todos, setTodos] = useState<ITodo[]>([]);
-  const baseUrl = 'http://127.0.0.1:8000';
   const socketUrl = 'ws://localhost:8000/ws';
   const { readyState } = useWebSocket(socketUrl, {
    onMessage: (event) => handleWS(event as WsEvent),
@@ -25,29 +24,12 @@ export const Todo: React.FC = () => {
   }[readyState];
 
   useEffectOnce(() => {
-    fetchTodos();
+    getAllTodo();
   });
 
-  const fetchTodos = async () => {
-    const response = await axios.get<ITodo[]>(`${baseUrl}/todos`);
-    setTodos(response.data);
-  };
-
-  const addTodo = async (title: string) => {
-    // const response = 
-    await axios.post<ITodo>(`${baseUrl}/todos`, { title, completed: false, id: Math.floor((Math.random() * 10000) + 1) });    
-    // setTodos([...todos, response.data]);
-  };
-
-  const deleteTodo = async (id: number) => {
-    await axios.delete(`${baseUrl}/todos/${id}`);
-    // setTodos(todos.filter(todo => todo.id !== id));
-  };
-
-
-  const toggleTodo = async (id: number) => {
-    await axios.put(`${baseUrl}/todos/${id}/toggle`);
-    // setTodos(todos.map(todo => todo.id === id ? {...todo, completed: !todo.completed} : todo));
+  const getAllTodo = async () => {
+    const response = await fetchTodos()
+    setTodos(response);
   };
 
   const handleWS = (event : WsEvent) => {
@@ -75,8 +57,8 @@ export const Todo: React.FC = () => {
   return (
     <>
       { connectionStatus }
-      <TodoForm addTodo={addTodo} />
-      <TodoList todos={todos} deleteTodo={deleteTodo} toggleTodo={toggleTodo} />
+      <TodoForm />
+      <TodoList todos={todos} />
     </>
   );
 };

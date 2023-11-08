@@ -1,15 +1,13 @@
 import { useState } from "react";
+import { addTodo } from "../api/todo";
 
-interface TodoFormProps {
-  addTodo: (title: string) => void;
-}
 
-export const TodoForm: React.FC<TodoFormProps> = ({ addTodo }) => {
+export const TodoForm: React.FC = () => {
   const [title, setTitle] = useState('');
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    addTodo(title);
+    await addTodo(title);
     setTitle('');
   };
 

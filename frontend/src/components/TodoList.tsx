@@ -1,12 +1,11 @@
+import { deleteTodo, toggleTodo } from "../api/todo";
 import { ITodo } from "./types";
 
 interface TodoListProps {
   todos: ITodo[];
-  deleteTodo: (id: number) => void;
-  toggleTodo: (id: number) => void;
 }
 
-export const TodoList: React.FC<TodoListProps> = ({ todos, deleteTodo, toggleTodo }) => {
+export const TodoList: React.FC<TodoListProps> = ({ todos}) => {
   return (
     <ul>
       {todos.map(({id, title, completed}) => (
