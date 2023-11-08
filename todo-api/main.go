@@ -12,12 +12,6 @@ import (
 	"github.com/gorilla/websocket"
 )
 
-var upgrader = websocket.Upgrader{
-	CheckOrigin: func(r *http.Request) bool {
-		return true
-	},
-}
-
 type EventType string
 
 const (
@@ -44,7 +38,7 @@ var tasks = []Task{
 
 var c = make(chan Event)
 
-func getAllTodos(w http.ResponseWriter, r *http.Request) {
+func getAllTodos(w http.ResponseWriter, _ *http.Request) {
 	json.NewEncoder(w).Encode(tasks)
 }
 
@@ -82,30 +76,43 @@ func toggleTodo(w http.ResponseWriter, r *http.Request) {
 	json.NewEncoder(w).Encode(tasks)
 }
 
+var upgrader = websocket.Upgrader{
+	CheckOrigin: func(r *http.Request) bool {
+		return true
+	},
+}
+var clients = make(map[*websocket.Conn]bool)
+
+func broadcast(message Event) {
+	for client := range clients {
+		if err := client.WriteJSON(message); err != nil {
+			fmt.Println("error:", err)
+			client.Close()
+			delete(clients, client)
+		}
+	}
+}
+
 func wsHandler(w http.ResponseWriter, r *http.Request) {
 	// Upgrade the HTTP connection to a WebSocket connection
 	conn, err := upgrader.Upgrade(w, r, nil)
-	fmt.Println("ddddddddddd")
 
 	if err != nil {
 		fmt.Println("Error during connection upgradation:", err)
 		return
 	}
+	clients[conn] = true
 	defer conn.Close()
 
-	fmt.Println("ffff")
 	go func() {
 		for msg1 := range c {
-			fmt.Println("msg1:", msg1)
-			conn.WriteJSON(msg1)
+			broadcast(msg1)
 		}
 	}()
 
 	// The event loop
 	for {
-		fmt.Println("kkkk")
 		messageType, message, err := conn.ReadMessage()
-		fmt.Println("fggggg")
 		if err != nil {
 			fmt.Println("Error during message reading:", err)
 			break
