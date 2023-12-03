@@ -4,6 +4,7 @@ package main
 import (
 	"encoding/json"
 	"fmt"
+	"main/queue"
 	"net/http"
 	"strconv"
 
@@ -82,6 +83,8 @@ var upgrader = websocket.Upgrader{
 	},
 }
 var clients = make(map[*websocket.Conn]bool)
+var lastId = 0
+var q = queue.New(50)
 
 func broadcast(message Event) {
 	for client := range clients {
@@ -127,6 +130,15 @@ func wsHandler(w http.ResponseWriter, r *http.Request) {
 }
 
 func main() {
+
+	q.Enqueue(1)
+	q.Enqueue(2)
+	q.Enqueue(3)
+	fmt.Println(q.Size()) // Outputs: 3
+	q.Enqueue(4)
+	fmt.Println(q.Size()) // Outputs: 3
+	q.Dequeue()
+	fmt.Println(q.Size()) // Outputs: 2
 	router := mux.NewRouter()
 	router.HandleFunc("/todos", getAllTodos).Methods("GET")
 	router.HandleFunc("/todos", createTodo).Methods("POST")
