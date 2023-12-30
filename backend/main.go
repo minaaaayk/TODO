@@ -4,6 +4,7 @@ package main
 import (
 	"encoding/json"
 	"fmt"
+	types "main/Types"
 	"main/queue"
 	"net/http"
 	"strconv"
@@ -15,38 +16,21 @@ import (
 
 type EventType string
 
-const (
-	CreatedEventType EventType = "Created"
-	UpdateEventType  EventType = "Updated"
-	DeleteEventType  EventType = "Deleted"
-)
-
-type Event struct {
-	Type EventType   `json:"type"`
-	Data interface{} `json:"data"`
-}
-
-type Task struct {
-	ID        int    `json:"id"`
-	Title     string `json:"title"`
-	Completed bool   `json:"completed"`
-}
-
-var tasks = []Task{
+var tasks = []types.Task{
 	{ID: 1, Title: "Task 1", Completed: false},
 	{ID: 2, Title: "Task 2", Completed: true},
 }
 
-var c = make(chan Event)
+var c = make(chan types.Event)
 
 func getAllTodos(w http.ResponseWriter, _ *http.Request) {
 	json.NewEncoder(w).Encode(tasks)
 }
 
 func createTodo(w http.ResponseWriter, r *http.Request) {
-	var newTask Task
+	var newTask types.Task
 	_ = json.NewDecoder(r.Body).Decode(&newTask)
-	c <- Event{Type: CreatedEventType, Data: newTask}
+	c <- types.Event{Type: types.CreatedEventType, Data: newTask}
 	tasks = append(tasks, newTask)
 	json.NewEncoder(w).Encode(newTask)
 }
@@ -56,7 +40,7 @@ func deleteTodo(w http.ResponseWriter, r *http.Request) {
 	taskID, _ := strconv.Atoi(params["id"])
 	for index, task := range tasks {
 		if task.ID == taskID {
-			c <- Event{Type: DeleteEventType, Data: task}
+			c <- types.Event{Type: types.DeleteEventType, Data: task}
 			tasks = append(tasks[:index], tasks[index+1:]...)
 			break
 		}
@@ -70,7 +54,7 @@ func toggleTodo(w http.ResponseWriter, r *http.Request) {
 	for index, task := range tasks {
 		if task.ID == taskID {
 			tasks[index].Completed = !tasks[index].Completed
-			c <- Event{Type: UpdateEventType, Data: tasks[index]}
+			c <- types.Event{Type: types.UpdateEventType, Data: tasks[index]}
 			break
 		}
 	}
@@ -83,10 +67,9 @@ var upgrader = websocket.Upgrader{
 	},
 }
 var clients = make(map[*websocket.Conn]bool)
-var lastId = 0
 var q = queue.New(50)
 
-func broadcast(message Event) {
+func broadcast(message types.Event) {
 	for client := range clients {
 		if err := client.WriteJSON(message); err != nil {
 			fmt.Println("error:", err)
