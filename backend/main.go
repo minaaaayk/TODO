@@ -22,6 +22,9 @@ var tasks = []types.Task{
 }
 
 var c = make(chan types.Event)
+var clients = make(map[*websocket.Conn]int)
+var q = queue.New(50)
+var version int
 
 func getAllTodos(w http.ResponseWriter, _ *http.Request) {
 	json.NewEncoder(w).Encode(tasks)
@@ -29,8 +32,11 @@ func getAllTodos(w http.ResponseWriter, _ *http.Request) {
 
 func createTodo(w http.ResponseWriter, r *http.Request) {
 	var newTask types.Task
+	version++
 	_ = json.NewDecoder(r.Body).Decode(&newTask)
-	c <- types.Event{Type: types.CreatedEventType, Data: newTask}
+	newEvent := types.Event{Type: types.CreatedEventType, Data: newTask, Version: version}
+	q.Enqueue(newEvent)
+	c <- newEvent
 	tasks = append(tasks, newTask)
 	json.NewEncoder(w).Encode(newTask)
 }
@@ -40,7 +46,9 @@ func deleteTodo(w http.ResponseWriter, r *http.Request) {
 	taskID, _ := strconv.Atoi(params["id"])
 	for index, task := range tasks {
 		if task.ID == taskID {
-			c <- types.Event{Type: types.DeleteEventType, Data: task}
+			newEvent := types.Event{Type: types.DeleteEventType, Data: task, Version: version}
+			q.Enqueue(newEvent)
+			c <- newEvent
 			tasks = append(tasks[:index], tasks[index+1:]...)
 			break
 		}
@@ -54,7 +62,9 @@ func toggleTodo(w http.ResponseWriter, r *http.Request) {
 	for index, task := range tasks {
 		if task.ID == taskID {
 			tasks[index].Completed = !tasks[index].Completed
-			c <- types.Event{Type: types.UpdateEventType, Data: tasks[index]}
+			newEvent := types.Event{Type: types.UpdateEventType, Data: tasks[index], Version: version}
+			q.Enqueue(newEvent)
+			c <- newEvent
 			break
 		}
 	}
@@ -66,12 +76,15 @@ var upgrader = websocket.Upgrader{
 		return true
 	},
 }
-var clients = make(map[*websocket.Conn]bool)
-var q = queue.New(50)
 
 func broadcast(message types.Event) {
-	for client := range clients {
-		if err := client.WriteJSON(message); err != nil {
+	for client, clientVersion := range clients {
+		if fist, err := q.Get(0); err != nil && fist.Version > clientVersion {
+			client.WriteJSON(types.Error{Code: 410, Message: "deprecated"})
+			fmt.Println("410 error:")
+			client.Close()
+
+		} else if err := client.WriteJSON(message); err != nil {
 			fmt.Println("error:", err)
 			client.Close()
 			delete(clients, client)
@@ -87,7 +100,7 @@ func wsHandler(w http.ResponseWriter, r *http.Request) {
 		fmt.Println("Error during connection upgradation:", err)
 		return
 	}
-	clients[conn] = true
+	clients[conn] = version
 	defer conn.Close()
 
 	go func() {
@@ -113,15 +126,7 @@ func wsHandler(w http.ResponseWriter, r *http.Request) {
 }
 
 func main() {
-
-	q.Enqueue(1)
-	q.Enqueue(2)
-	q.Enqueue(3)
-	fmt.Println(q.Size()) // Outputs: 3
-	q.Enqueue(4)
-	fmt.Println(q.Size()) // Outputs: 3
-	q.Dequeue()
-	fmt.Println(q.Size()) // Outputs: 2
+	version = 0
 	router := mux.NewRouter()
 	router.HandleFunc("/todos", getAllTodos).Methods("GET")
 	router.HandleFunc("/todos", createTodo).Methods("POST")

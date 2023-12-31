@@ -9,10 +9,15 @@ const (
 )
 
 type Event struct {
-	Type EventType   `json:"type"`
-	Data interface{} `json:"data"`
+	Type    EventType   `json:"type"`
+	Data    interface{} `json:"data"`
+	Version int         `json:"version"`
 }
 
+type Error struct {
+	Code    int    `json:"code"`
+	Message string `json:"message"`
+}
 type Task struct {
 	ID        int    `json:"id"`
 	Title     string `json:"title"`

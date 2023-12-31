@@ -1,20 +1,23 @@
 package queue
 
-import "errors"
+import (
+	"errors"
+	types "main/Types"
+)
 
 type Queue struct {
-	items []int
+	items []types.Event
 	limit int
 }
 
 func New(limit int) *Queue {
 	return &Queue{
-		items: make([]int, 0),
+		items: make([]types.Event, 0),
 		limit: limit,
 	}
 }
 
-func (q *Queue) Enqueue(item int) error {
+func (q *Queue) Enqueue(item types.Event) error {
 	if len(q.items) >= q.limit {
 		q.Dequeue() // Remove the item from the front of the queue if it's full
 	}
@@ -22,9 +25,9 @@ func (q *Queue) Enqueue(item int) error {
 	return nil
 }
 
-func (q *Queue) Dequeue() (int, error) {
+func (q *Queue) Dequeue() (types.Event, error) {
 	if len(q.items) == 0 {
-		return 0, errors.New("queue is empty")
+		return types.Event{Type: "", Data: nil, Version: 0}, errors.New("queue is empty")
 	}
 	item := q.items[0]
 	q.items = q.items[1:]
@@ -33,4 +36,14 @@ func (q *Queue) Dequeue() (int, error) {
 
 func (q *Queue) Size() int {
 	return len(q.items)
+}
+
+func (q *Queue) Get(index int) (types.Event, error) {
+	if len(q.items) == 0 {
+		return types.Event{Type: "", Data: nil, Version: 0}, errors.New("queue is empty")
+	}
+	if index > (len(q.items) - 1) {
+		return types.Event{Type: "", Data: nil, Version: 0}, errors.New("index not found")
+	}
+	return q.items[index], nil
 }
