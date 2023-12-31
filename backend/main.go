@@ -133,7 +133,7 @@ func main() {
 	router.HandleFunc("/todos", createTodo).Methods("POST")
 	router.HandleFunc("/todos/{id}", deleteTodo).Methods("DELETE")
 	router.HandleFunc("/todos/{id}/toggle", toggleTodo).Methods("PUT")
-	router.HandleFunc("/ws/{version}", wsHandler)
+	router.HandleFunc("/ws", wsHandler)
 
 	allowedOrigins := handlers.AllowedOrigins([]string{"*"})
 	allowedMethods := handlers.AllowedMethods([]string{"GET", "POST", "PUT", "DELETE", "OPTIONS"})
