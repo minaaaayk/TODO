@@ -2,7 +2,7 @@
 
 This simple project is written with:
 1. front-end: react-typescript
-2. go lang
+2. back-end: go lang
 
 that communicate with each other with:
 1. CRUD Api
