@@ -100,7 +100,8 @@ func wsHandler(w http.ResponseWriter, r *http.Request) {
 		fmt.Println("Error during connection upgradation:", err)
 		return
 	}
-	clients[conn] = version
+	clients[conn] = version // from req
+	// add logic
 	defer conn.Close()
 
 	go func() {
@@ -132,7 +133,7 @@ func main() {
 	router.HandleFunc("/todos", createTodo).Methods("POST")
 	router.HandleFunc("/todos/{id}", deleteTodo).Methods("DELETE")
 	router.HandleFunc("/todos/{id}/toggle", toggleTodo).Methods("PUT")
-	router.HandleFunc("/ws", wsHandler)
+	router.HandleFunc("/ws/{version}", wsHandler)
 
 	allowedOrigins := handlers.AllowedOrigins([]string{"*"})
 	allowedMethods := handlers.AllowedMethods([]string{"GET", "POST", "PUT", "DELETE", "OPTIONS"})
