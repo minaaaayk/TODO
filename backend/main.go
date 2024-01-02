@@ -27,7 +27,7 @@ var q = queue.New(50)
 var version int
 
 func getAllTodos(w http.ResponseWriter, _ *http.Request) {
-	json.NewEncoder(w).Encode(tasks)
+	json.NewEncoder(w).Encode(types.AllTask{Items: tasks, Version: version})
 }
 
 func createTodo(w http.ResponseWriter, r *http.Request) {
@@ -46,6 +46,7 @@ func deleteTodo(w http.ResponseWriter, r *http.Request) {
 	taskID, _ := strconv.Atoi(params["id"])
 	for index, task := range tasks {
 		if task.ID == taskID {
+			version++
 			newEvent := types.Event{Type: types.DeleteEventType, Data: task, Version: version}
 			q.Enqueue(newEvent)
 			c <- newEvent
@@ -61,6 +62,7 @@ func toggleTodo(w http.ResponseWriter, r *http.Request) {
 	taskID, _ := strconv.Atoi(params["id"])
 	for index, task := range tasks {
 		if task.ID == taskID {
+			version++
 			tasks[index].Completed = !tasks[index].Completed
 			newEvent := types.Event{Type: types.UpdateEventType, Data: tasks[index], Version: version}
 			q.Enqueue(newEvent)
@@ -133,6 +135,7 @@ func main() {
 	router.HandleFunc("/todos", createTodo).Methods("POST")
 	router.HandleFunc("/todos/{id}", deleteTodo).Methods("DELETE")
 	router.HandleFunc("/todos/{id}/toggle", toggleTodo).Methods("PUT")
+	router.HandleFunc("/ws/{version}", wsHandler)
 	router.HandleFunc("/ws", wsHandler)
 
 	allowedOrigins := handlers.AllowedOrigins([]string{"*"})

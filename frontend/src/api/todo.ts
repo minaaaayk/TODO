@@ -6,7 +6,7 @@ import { ITodo } from "../components/types";
 const baseUrl = 'http://127.0.0.1:8000';
 
 export const fetchTodos = async () => {
-    const response = await axios.get<ITodo[]>(`${baseUrl}/todos`);
+    const response = await axios.get<{items: ITodo[], version: number}>(`${baseUrl}/todos`);
     return (response.data);
 };
 

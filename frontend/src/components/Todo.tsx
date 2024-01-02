@@ -29,7 +29,7 @@ export const Todo: React.FC = () => {
 
   const getAllTodo = async () => {
     const response = await fetchTodos()
-    setTodos(response);
+    setTodos(response?.items || []);
   };
 
   const handleWS = (event : WsEvent) => {

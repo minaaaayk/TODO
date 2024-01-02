@@ -23,3 +23,8 @@ type Task struct {
 	Title     string `json:"title"`
 	Completed bool   `json:"completed"`
 }
+
+type AllTask struct {
+	Items   []Task `json:"items"`
+	Version int    `json:"version"`
+}
