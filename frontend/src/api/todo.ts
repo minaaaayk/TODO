@@ -1,7 +1,7 @@
 
 
 import axios from "axios";
-import { ITodo } from "../components/types";
+import { ITodo } from "../Types/todo";
 
 const baseUrl = 'http://127.0.0.1:8000';
 
