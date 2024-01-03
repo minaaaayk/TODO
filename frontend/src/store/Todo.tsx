@@ -10,6 +10,7 @@ interface TodoState {
     loading: boolean;
     error: boolean;
     fetchTodos: () => Promise<void>;
+    setError: (error: boolean) => void;
     addTodo: (todo: ITodo, version: number) => void;
     toggleTodo: (todo: ITodo, version: number) => void;
     deleteTodo: (todo: ITodo, version: number) => void;
@@ -48,5 +49,8 @@ export const useTodoStore = create<TodoState>((set, get) => ({
         set((state) => ({
             lastVersion: state.lastVersion < version ? version : state.lastVersion,
         }));
+    },
+    setError: (error: boolean) => {
+        set({error});
     },
 }));

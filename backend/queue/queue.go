@@ -38,7 +38,7 @@ func (q *Queue) Size() int {
 	return len(q.items)
 }
 
-func (q *Queue) Get(index int) (types.Event, error) {
+func (q *Queue) GetItem(index int) (types.Event, error) {
 	if len(q.items) == 0 {
 		return types.Event{Type: "", Data: nil, Version: 0}, errors.New("queue is empty")
 	}

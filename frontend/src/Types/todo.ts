@@ -5,13 +5,14 @@ export interface ITodo {
 }
 
 export enum EventType {
-    CreatedEventType = "Created",
-    UpdateEventType = "Updated",
-    DeleteEventType = "Deleted",
+    CreatedType = "Created",
+    UpdateType = "Updated",
+    DeleteType = "Deleted",
+    ErrorType = "Error",
 };
 
 export interface WsEvent {
     type: EventType;
-    data: string;
-    version: string,
+    data: any;
+    version: number,
 }

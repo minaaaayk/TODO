@@ -79,17 +79,26 @@ var upgrader = websocket.Upgrader{
 	},
 }
 
+func checkDeprecation(client *websocket.Conn, clientVersion int) bool {
+	if frontItem, err := q.GetItem(0); err == nil && frontItem.Version > clientVersion+1 {
+		errorData := types.Error{Code: 410, Message: "deprecated"}
+		client.WriteJSON(types.Event{Type: types.ErrorEventType, Data: errorData, Version: version})
+		fmt.Println("410 error:")
+		client.Close()
+		return true
+	} else {
+		return false
+	}
+}
+
 func broadcast(message types.Event) {
 	for client, clientVersion := range clients {
-		if fist, err := q.Get(0); err != nil && fist.Version > clientVersion {
-			client.WriteJSON(types.Error{Code: 410, Message: "deprecated"})
-			fmt.Println("410 error:")
-			client.Close()
-
-		} else if err := client.WriteJSON(message); err != nil {
-			fmt.Println("error:", err)
-			client.Close()
-			delete(clients, client)
+		if !checkDeprecation(client, clientVersion) {
+			if err := client.WriteJSON(message); err != nil {
+				fmt.Println("error:", err)
+				client.Close()
+				delete(clients, client)
+			}
 		}
 	}
 }
@@ -97,12 +106,22 @@ func broadcast(message types.Event) {
 func wsHandler(w http.ResponseWriter, r *http.Request) {
 	// Upgrade the HTTP connection to a WebSocket connection
 	conn, err := upgrader.Upgrade(w, r, nil)
-
 	if err != nil {
 		fmt.Println("Error during connection upgradation:", err)
 		return
 	}
-	clients[conn] = version // from req
+
+	params := mux.Vars(r)
+	if currentVersion, err := strconv.Atoi(params["version"]); err != nil {
+		clients[conn] = version
+	} else {
+		if checkDeprecation(conn, currentVersion) {
+			fmt.Println("Error connection version:")
+			return
+		}
+		clients[conn] = currentVersion
+	}
+
 	// add logic
 	defer conn.Close()
 

@@ -6,6 +6,7 @@ const (
 	CreatedEventType EventType = "Created"
 	UpdateEventType  EventType = "Updated"
 	DeleteEventType  EventType = "Deleted"
+	ErrorEventType   EventType = "Error"
 )
 
 type Event struct {
