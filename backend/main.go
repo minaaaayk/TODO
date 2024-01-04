@@ -23,7 +23,7 @@ var tasks = []types.Task{
 
 var c = make(chan types.Event)
 var clients = make(map[*websocket.Conn]int)
-var q = queue.New(5)
+var q = queue.New(50)
 var version int
 
 func getAllTodos(w http.ResponseWriter, _ *http.Request) {
