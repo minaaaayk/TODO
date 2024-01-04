@@ -14,6 +14,7 @@ interface TodoState {
     addTodo: (todo: ITodo, version: number) => void;
     toggleTodo: (todo: ITodo, version: number) => void;
     deleteTodo: (todo: ITodo, version: number) => void;
+    setCurrentVersion: (version: number) => void;
     updateLastVersion: (version: number) => void;
 }
 
@@ -44,6 +45,9 @@ export const useTodoStore = create<TodoState>((set, get) => ({
     deleteTodo: (todo: ITodo, version: number) => {
         set((state) => ({ todos: state.todos.filter(item => item.id !== todo.id) }));
         get().updateLastVersion(version);
+    },
+    setCurrentVersion: (version: number) => {
+        set({ currentVersion: version });
     },
     updateLastVersion: (version: number) => {
         set((state) => ({

@@ -23,7 +23,7 @@ var tasks = []types.Task{
 
 var c = make(chan types.Event)
 var clients = make(map[*websocket.Conn]int)
-var q = queue.New(50)
+var q = queue.New(5)
 var version int
 
 func getAllTodos(w http.ResponseWriter, _ *http.Request) {
@@ -82,12 +82,24 @@ var upgrader = websocket.Upgrader{
 func checkDeprecation(client *websocket.Conn, clientVersion int) bool {
 	if frontItem, err := q.GetItem(0); err == nil && frontItem.Version > clientVersion+1 {
 		errorData := types.Error{Code: 410, Message: "deprecated"}
-		client.WriteJSON(types.Event{Type: types.ErrorEventType, Data: errorData, Version: version})
+		client.WriteJSON(types.Event{Type: types.ErrorEventType, Data: errorData, Version: version - 1})
 		fmt.Println("410 error:")
 		client.Close()
 		return true
 	} else {
 		return false
+	}
+}
+
+func sendRemaining(client *websocket.Conn, clientVersion int) {
+	for i := 0; i <= q.Size(); i++ {
+		if item, err := q.GetItem(i); err == nil && item.Version > clientVersion {
+			if err := client.WriteJSON(item); err != nil {
+				fmt.Println("error:", err)
+				client.Close()
+				delete(clients, client)
+			}
+		}
 	}
 }
 
@@ -117,12 +129,14 @@ func wsHandler(w http.ResponseWriter, r *http.Request) {
 	} else {
 		if checkDeprecation(conn, currentVersion) {
 			fmt.Println("Error connection version:")
+			conn.Close()
 			return
 		}
 		clients[conn] = currentVersion
 	}
-
 	// add logic
+	sendRemaining(conn, clients[conn])
+
 	defer conn.Close()
 
 	go func() {

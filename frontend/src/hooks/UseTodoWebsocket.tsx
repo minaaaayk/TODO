@@ -7,7 +7,7 @@ export const UseTodoWebsocket = (version: number) => {
     const addTodo = useTodoStore((state) => state.addTodo);
     const toggleTodo = useTodoStore((state) => state.toggleTodo);
     const deleteTodo = useTodoStore((state) => state.deleteTodo);
-    const setError = useTodoStore((state) => state.setError);
+    const setCurrentVersion = useTodoStore((state) => state.setCurrentVersion);
 
     const url = `ws://localhost:8000/ws/${version}`;
     const ws = useWebSocket(url, {
@@ -40,7 +40,7 @@ export const UseTodoWebsocket = (version: number) => {
                 break;
             case EventType.ErrorType:
                 console.log('error: ',data, version );
-                setError(true)
+                setCurrentVersion(version)
                 // TODO: add change version
                 break;
 
